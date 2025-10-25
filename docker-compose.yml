@@ -1,18 +1,48 @@
+version: '3.8'
+
 services:
-    nopcommerce_web:
-        build: .
-        container_name: nopcommerce
-        ports:
-            - "80:80"
-        depends_on:
-            - nopcommerce_database
-    nopcommerce_database:
-        image: "mcr.microsoft.com/mssql/server:2019-latest"
-        container_name: nopcommerce_mssql_server
-        environment:
-            SA_PASSWORD: "nopCommerce_db_password"
-            ACCEPT_EULA: "Y"
-            MSSQL_PID: "Express"
+  nopcommerce_web:
+    build: .
+    container_name: nopcommerce
+    ports:
+      - "127.0.0.1:${NOP_COMMERCE_PORT:-8080}:80"
+    depends_on:
+      - nopcommerce_database
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+      - Nop__ServerProxySettings__ForwardedProtoHeader=${NOP_FORWARDED_PROTO_HEADER}
+      - Nop__Data__DbHost=${POSTGRES_HOST}
+      - Nop__Data__DbName=${POSTGRES_DB}
+      - Nop__Data__DbUsername=${POSTGRES_USER}
+      - Nop__Data__DbPassword=${POSTGRES_PASSWORD}
+      - Nop__Data__DbPort=${POSTGRES_PORT}
+    networks:
+      - ${DOCKER_NETWORK:-nopnetwork}
+    restart: unless-stopped
+
+  nopcommerce_database:
+    image: "postgres:latest"
+    container_name: nopcommerce_postgres_server
+    restart: "always"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ${POSTGRES_VOLUME:-nopcommerce_data}:/var/lib/postgresql/data
+    networks:
+      - ${DOCKER_NETWORK:-nopnetwork}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  nopnetwork:
+    driver: bridge
+    name: ${DOCKER_NETWORK:-nopnetwork}
 
 volumes:
-  nopcommerce_data:            
+  nopcommerce_data:
+    name: ${POSTGRES_VOLUME:-nopcommerce_data}
