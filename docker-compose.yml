@@ -7,7 +7,8 @@ services:
     ports:
       - "127.0.0.1:${NOP_COMMERCE_PORT:-8080}:80"
     depends_on:
-      - nopcommerce_database
+      nopcommerce_database:
+        condition: service_healthy
     environment:
       - ASPNETCORE_URLS=http://+:80
       - Nop__ServerProxySettings__ForwardedProtoHeader=${NOP_FORWARDED_PROTO_HEADER}
@@ -21,15 +22,16 @@ services:
     restart: unless-stopped
 
   nopcommerce_database:
-    image: "postgres:latest"
+    image: "postgres:16"  # Use PostgreSQL 16 for stability
     container_name: nopcommerce_postgres_server
     restart: "always"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
-      - ${POSTGRES_VOLUME:-nopcommerce_data}:/var/lib/postgresql/data
+      - ${POSTGRES_VOLUME:-postgres_data}:/var/lib/postgresql/data
     networks:
       - ${DOCKER_NETWORK:-nopnetwork}
     healthcheck:
@@ -37,6 +39,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
 networks:
   nopnetwork:
@@ -44,5 +47,5 @@ networks:
     name: ${DOCKER_NETWORK:-nopnetwork}
 
 volumes:
-  nopcommerce_data:
-    name: ${POSTGRES_VOLUME:-nopcommerce_data}
+  postgres_data:
+    name: ${POSTGRES_VOLUME:-postgres_data}
