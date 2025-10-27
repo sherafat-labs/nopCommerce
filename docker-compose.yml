@@ -9,6 +9,8 @@ services:
     depends_on:
       nopcommerce_database:
         condition: service_healthy
+      postfix:
+        condition: service_started
     environment:
       - ASPNETCORE_URLS=http://+:80
       - Nop__ServerProxySettings__ForwardedProtoHeader=${NOP_FORWARDED_PROTO_HEADER}
@@ -20,6 +22,14 @@ services:
       - Nop__Data__DbCommandTimeout=${DB_COMMAND_TIMEOUT:-300}
       - Nop__Data__DbConnectionTimeout=${DB_CONNECTION_TIMEOUT:-30}
       - Nop__Data__DbProvider=postgresql
+      # Email Configuration for Postfix
+      - Nop__EmailSettings__DefaultEmailAddressFrom=${EMAIL_FROM}
+      - Nop__EmailSettings__DefaultEmailDisplayName=${EMAIL_DISPLAY_NAME}
+      - Nop__EmailSettings__Host=postfix
+      - Nop__EmailSettings__Port=25
+      - Nop__EmailSettings__Username=${SMTP_USERNAME}
+      - Nop__EmailSettings__Password=${SMTP_PASSWORD}
+      - Nop__EmailSettings__EnableSsl=false
     networks:
       - ${DOCKER_NETWORK:-nopnetwork}
     restart: unless-stopped
@@ -44,6 +54,20 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  postfix:
+    image: mvance/postfix:latest
+    container_name: nopcommerce_postfix
+    environment:
+      - SMTP_SERVER=stoneb2b.ir
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SERVER_HOSTNAME=mail.stoneb2b.ir
+      - RELAYHOST=[smtp.gmail.com]:587
+      - DISABLE_IPV6=true
+    networks:
+      - ${DOCKER_NETWORK:-nopnetwork}
+    restart: unless-stopped
 
 networks:
   nopnetwork:
