@@ -56,11 +56,13 @@ services:
       start_period: 30s
 
   postfix:
-    image: catatnight/postfix:latest
+    image: boky/postfix
     container_name: nopcommerce_postfix
     environment:
-      - maildomain=stoneb2b.ir
-      - smtp_user=${SMTP_USERNAME}:${SMTP_PASSWORD}
+      - ALLOWED_SENDER_DOMAINS=stoneb2b.ir
+      - RELAYHOST=[smtp.gmail.com]:587
+      - RELAYHOST_USERNAME=${SMTP_USERNAME}
+      - RELAYHOST_PASSWORD=${SMTP_PASSWORD}
     networks:
       - ${DOCKER_NETWORK:-nopnetwork}
     restart: unless-stopped
