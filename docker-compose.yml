@@ -56,15 +56,11 @@ services:
       start_period: 30s
 
   postfix:
-    image: mvance/postfix:latest
+    image: catatnight/postfix:latest
     container_name: nopcommerce_postfix
     environment:
-      - SMTP_SERVER=stoneb2b.ir
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - SERVER_HOSTNAME=mail.stoneb2b.ir
-      - RELAYHOST=[smtp.gmail.com]:587
-      - DISABLE_IPV6=true
+      - maildomain=stoneb2b.ir
+      - smtp_user=${SMTP_USERNAME}:${SMTP_PASSWORD}
     networks:
       - ${DOCKER_NETWORK:-nopnetwork}
     restart: unless-stopped
